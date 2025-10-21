@@ -1,0 +1,147 @@
+Microsoft Windows [Version 10.0.26100.4652]
+(c) Microsoft Corporation. All rights reserved.
+
+C:\Program Files\MySQL\MySQL Server 8.0\bin>mysql -h localhost -u root -p
+Enter password: **********
+Welcome to the MySQL monitor.  Commands end with ; or \g.
+Your MySQL connection id is 9
+Server version: 8.0.43 MySQL Community Server - GPL
+
+Copyright (c) 2000, 2025, Oracle and/or its affiliates.
+
+Oracle is a registered trademark of Oracle Corporation and/or its
+affiliates. Other names may be trademarks of their respective
+owners.
+
+Type 'help;' or '\h' for help. Type '\c' to clear the current input statement.
+
+mysql> show databases;
++--------------------+
+| Database           |
++--------------------+
+| information_schema |
+| inventory          |
+| mysql              |
+| performance_schema |
+| sakila             |
+| sys                |
+| world              |
++--------------------+
+7 rows in set (0.07 sec)
+
+mysql> use inventory;
+Database changed
+mysql> show tables;
++---------------------+
+| Tables_in_inventory |
++---------------------+
+| product             |
+| sale                |
+| supplier            |
++---------------------+
+3 rows in set (0.01 sec)
+
+mysql> select *from product;
++-----+-------+-------+
+| pid | pname | price |
++-----+-------+-------+
+| 104 | NULL  |  NULL |
++-----+-------+-------+
+1 row in set (0.02 sec)
+
+mysql> select *from sale;
++------+------+----------+
+| sid  | pid  | quantity |
++------+------+----------+
+|  100 |  104 |     NULL |
++------+------+----------+
+1 row in set (0.01 sec)
+
+mysql> select *from supplier;
++--------+--------+---------+-------+
+| suppid | sname  | address | email |
++--------+--------+---------+-------+
+|   2203 | Hedric | NULL    | NULL  |
++--------+--------+---------+-------+
+1 row in set (0.01 sec)
+
+mysql> create view V1 as select product.pid,pname,quantity,price from product,sale where product.pid=sale.pid;
+Query OK, 0 rows affected (0.02 sec)
+
+mysql> insert into V1 values('1024',coffee,2,96);
+ERROR 1394 (HY000): Can not insert into join view 'inventory.v1' without fields list
+mysql> update V1 set pid=1024;
+ERROR 1451 (23000): Cannot delete or update a parent row: a foreign key constraint fails (`inventory`.`sale`, CONSTRAINT `sale_ibfk_1` FOREIGN KEY (`pid`) REFERENCES `product` (`pid`))
+mysql> drop view V1;
+Query OK, 0 rows affected (0.01 sec)
+
+
+INDEXING :
+
+mysql> create index X on product(pid,pname);
+Query OK, 0 rows affected (0.04 sec)
+Records: 0  Duplicates: 0  Warnings: 0
+
+mysql> desc product;
++-------+-------------+------+-----+---------+-------+
+| Field | Type        | Null | Key | Default | Extra |
++-------+-------------+------+-----+---------+-------+
+| pid   | int         | NO   | PRI | NULL    |       |
+| pname | varchar(20) | YES  |     | NULL    |       |
+| price | float       | YES  |     | NULL    |       |
++-------+-------------+------+-----+---------+-------+
+3 rows in set (0.00 sec)
+
+mysql> insert into product values(1024,Coffee,96);
+ERROR 1054 (42S22): Unknown column 'Coffee' in 'field list'
+mysql> insert into product values(1024,'Coffee',96);
+Query OK, 1 row affected (0.01 sec)
+
+mysql> select *from product;
++------+--------+-------+
+| pid  | pname  | price |
++------+--------+-------+
+|  104 | NULL   |  NULL |
+| 1024 | Coffee |    96 |
++------+--------+-------+
+2 rows in set (0.00 sec)
+
+mysql> show index from product;
++---------+------------+----------+--------------+-------------+-----------+-------------+----------+--------+------+------------+---------+---------------+---------+------------+
+| Table   | Non_unique | Key_name | Seq_in_index | Column_name | Collation | Cardinality | Sub_part | Packed | Null | Index_type | Comment | Index_comment | Visible | Expression |
++---------+------------+----------+--------------+-------------+-----------+-------------+----------+--------+------+------------+---------+---------------+---------+------------+
+| product |          0 | PRIMARY  |            1 | pid         | A         |           1 |     NULL |   NULL |      | BTREE      |         |               | YES     | NULL       |
+| product |          1 | X        |            1 | pid         | A         |           1 |     NULL |   NULL |      | BTREE      |         |               | YES     | NULL       |
+| product |          1 | X        |            2 | pname       | A         |           1 |     NULL |   NULL | YES  | BTREE      |         |               | YES     | NULL       |
++---------+------------+----------+--------------+-------------+-----------+-------------+----------+--------+------+------------+---------+---------------+---------+------------+
+3 rows in set (0.01 sec)
+
+
+LOGICAL OPERATIONS :
+
+mysql> select *from product where price between 50 AND 200;
++------+--------+-------+
+| pid  | pname  | price |
++------+--------+-------+
+| 1024 | Coffee |    96 |
++------+--------+-------+
+1 row in set (0.00 sec)
+
+mysql> select pname from product where pname like 'f%';
+Empty set (0.00 sec)
+
+mysql> select pname from product where pname like 'C%';
++--------+
+| pname  |
++--------+
+| Coffee |
++--------+
+1 row in set (0.00 sec)
+
+mysql> select pname from product where pname like '%f%';
++--------+
+| pname  |
++--------+
+| Coffee |
++--------+
+1 row in set (0.00 sec)
